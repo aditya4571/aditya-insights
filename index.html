@@ -1,64 +1,140 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADITYA Insights | Professional</title>
+    <title>ADITYA Insights | Ultra</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #05070a; --card: #111827; --accent: #0ea5e9;
-            --text: #f8fafc; --border: #1e293b; --success: #10b981;
-            --danger: #ef4444; --warning: #f59e0b;
-            --cat-railway: #8b5cf6; --cat-work: #3b82f6; --cat-family: #ec4899;
+            --bg: #020617;
+            --card: #0f172a;
+            --card-hover: #1e293b;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #1e293b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --cat-railway: #a855f7;
+            --cat-work: #3b82f6;
+            --cat-family: #ec4899;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui; background: var(--bg); color: var(--text); padding: 10px; line-height: 1.5; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s ease; }
+        body { 
+            font-family: 'Inter', system-ui, -apple-system; 
+            background: var(--bg); 
+            color: var(--text); 
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
         .container { max-width: 1400px; margin: auto; }
 
+        /* --- Header --- */
         header { 
             display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+            padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 25px;
         }
-        .brand h1 { font-size: 1.5rem; letter-spacing: 1px; color: var(--accent); }
+        .brand h1 { 
+            font-size: 1.8rem; font-weight: 800; letter-spacing: -1px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
 
-        .dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
-        @media (max-width: 1000px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        /* --- Layout Grids --- */
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 20px; 
+            margin-bottom: 25px;
+        }
 
-        .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
-        h3 { margin-bottom: 15px; font-weight: 600; font-size: 1.1rem; }
+        .main-layout { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr; 
+            gap: 25px; 
+        }
 
-        /* Habit Table */
-        .table-scroll { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 450px; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .habit-label { text-align: left; color: var(--accent); font-weight: bold; }
+        @media (max-width: 1100px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .main-layout { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 700px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
 
-        /* Todo Form */
-        .todo-form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
-        input, select { background: #1f2937; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; flex: 1; }
-        select { flex: 0 0 100px; }
+        .card { 
+            background: var(--card); 
+            border-radius: 20px; 
+            border: 1px solid var(--border); 
+            padding: 24px; 
+            position: relative;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Focus Timer --- */
+        .timer-display { 
+            font-size: 3.5rem; font-weight: 800; text-align: center; 
+            margin: 10px 0; font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+        .timer-controls { display: flex; justify-content: center; gap: 15px; }
+        .btn-timer {
+            width: 50px; height: 50px; border-radius: 50%; border: none;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; background: var(--border); color: white;
+        }
+        .btn-timer.active { background: var(--accent); color: var(--bg); box-shadow: 0 0 15px var(--accent); }
+
+        /* --- Stats Cards --- */
+        .stat-val { font-size: 2rem; font-weight: 700; color: var(--accent); }
+        .stat-label { color: var(--text-dim); font-size: 0.9rem; margin-top: 5px; }
+
+        /* --- Habit Table --- */
+        .table-scroll { overflow-x: auto; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th, td { padding: 16px; text-align: center; border-bottom: 1px solid var(--border); }
+        .habit-label { text-align: left; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
         
-        .priority-toggle { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--danger); cursor: pointer; }
+        input[type="checkbox"] {
+            width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent);
+        }
 
-        /* Todo List */
+        /* --- To-Do --- */
+        .todo-input-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .input-row { display: flex; gap: 10px; }
+        input[type="text"], select { 
+            background: #1e293b; border: 1px solid var(--border); 
+            color: white; padding: 12px; border-radius: 10px; flex: 1;
+        }
         .todo-item { 
-            display: flex; align-items: center; padding: 12px; background: #1e293b; 
-            border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #64748b;
+            display: flex; align-items: center; padding: 14px; background: rgba(30, 41, 59, 0.5); 
+            border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--border);
         }
-        .todo-item.critical { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
-        .todo-item.done { opacity: 0.4; }
-        
-        .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-right: 8px; font-weight: 800; }
+        .todo-item.critical { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+        .todo-item.done { opacity: 0.5; filter: grayscale(1); }
+        .tag { font-size: 10px; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; font-weight: 800; margin-right: 10px; }
         .tag.Railway { background: var(--cat-railway); }
         .tag.Work { background: var(--cat-work); }
         .tag.Family { background: var(--cat-family); }
+        
+        /* --- Buttons --- */
+        .btn { 
+            background: var(--accent); color: var(--bg); border: none; 
+            padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-sync { background: var(--success); color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-del { color: var(--danger); margin-left: auto; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
 
-        .btn { background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .btn-sync { background: var(--success); }
-        .btn-del { margin-left: auto; color: var(--danger); background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+        .sync-loading { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -66,16 +142,47 @@
 <div class="container">
     <header>
         <div class="brand"><h1>ADITYA Insights</h1></div>
-        <button class="btn btn-sync" onclick="syncData()">Cloud Sync</button>
+        <button class="btn btn-sync" id="syncBtn" onclick="syncData()">
+            <i class="fas fa-cloud-upload-alt"></i> Cloud Sync
+        </button>
     </header>
 
+    <!-- Top Stats / Timer Row -->
     <div class="dashboard-grid">
+        <div class="card">
+            <h3>Focus Timer</h3>
+            <div class="timer-display" id="timer">25:00</div>
+            <div class="timer-controls">
+                <button class="btn-timer" id="timerToggle" onclick="toggleTimer()"><i class="fas fa-play"></i></button>
+                <button class="btn-timer" onclick="resetTimer()"><i class="fas fa-redo"></i></button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Study Progress</h3>
+            <div class="stat-val" id="studyTimeDisp">0 <span style="font-size: 1rem">mins</span></div>
+            <div class="stat-label">Total focus today</div>
+            <div style="margin-top: 15px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                <div id="studyBar" style="height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 10px var(--accent);"></div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Daily Score</h3>
+            <div class="stat-val" id="dailyScore">0%</div>
+            <div class="stat-label">Habit completion rate</div>
+            <p id="scoreMessage" style="font-size: 0.8rem; margin-top: 10px; color: var(--text-dim);">Keep pushing!</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-layout">
         <div class="main-sec">
             <div class="card">
-                <h3>Habit Tracker</h3>
-                <div class="todo-form">
-                    <input type="text" id="newHabit" placeholder="New Habit...">
-                    <button class="btn" onclick="addHabit()">Add</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Habit Tracker</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="newHabit" placeholder="New habit name..." style="padding: 8px;">
+                        <button class="btn" style="padding: 8px 15px;" onclick="addHabit()"><i class="fas fa-plus"></i></button>
+                    </div>
                 </div>
                 <div class="table-scroll">
                     <table>
@@ -84,24 +191,32 @@
                     </table>
                 </div>
             </div>
-            <div class="card"><canvas id="dayChart" height="120"></canvas></div>
+            
+            <div class="card">
+                <h3>Performance Analytics</h3>
+                <canvas id="dayChart" height="100"></canvas>
+            </div>
         </div>
 
         <div class="side-sec">
             <div class="card">
-                <h3>To-Do List</h3>
-                <div class="todo-form">
-                    <input type="text" id="todoIn" placeholder="Task description...">
-                    <select id="todoCat">
-                        <option value="General">General</option>
-                        <option value="Railway">Railway</option>
-                        <option value="Work">Work</option>
-                        <option value="Family">Family</option>
-                    </select>
-                </div>
-                <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
-                    <label class="priority-toggle"><input type="checkbox" id="isCritical"> CRITICAL PRIORITY</label>
-                    <button class="btn" onclick="addTodo()">Add Task</button>
+                <h3>Priority Tasks</h3>
+                <div class="todo-input-group">
+                    <input type="text" id="todoIn" placeholder="What needs to be done?">
+                    <div class="input-row">
+                        <select id="todoCat">
+                            <option value="General">General</option>
+                            <option value="Railway">Railway</option>
+                            <option value="Work">Work</option>
+                            <option value="Family">Family</option>
+                        </select>
+                        <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--danger); cursor: pointer; font-weight: 700;">
+                            <input type="checkbox" id="isCritical"> CRITICAL
+                        </label>
+                    </div>
+                    <button class="btn" onclick="addTodo()" style="width: 100%; justify-content: center;">
+                        Add Task
+                    </button>
                 </div>
                 <div id="todo-list"></div>
             </div>
@@ -110,22 +225,41 @@
 </div>
 
 <script>
-    // GITHUB CONFIG - ENTER YOUR DATA HERE
-    const GH = { token: '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', owner: 'aditya4571', repo: 'aditya-insights', path: 'data.json' };
+    // --- Configuration ---
+    const GH = { 
+        token: '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', 
+        owner: 'aditya4571', 
+        repo: 'aditya-insights', 
+        path: 'data.json' 
+    };
 
-    let state = { habits: ["Study", "Exercise", "Meditation"], habitLogs: {}, todos: [], sha: "" };
+    let state = { 
+        habits: ["Study", "Exercise", "Meditation"], 
+        habitLogs: {}, 
+        todos: [], 
+        sha: "" 
+    };
+
+    // --- Timer State ---
+    let timerInterval;
+    let secondsLeft = 25 * 60;
+    let timerActive = false;
 
     function init() {
         renderDates();
         loadFromGitHub();
     }
 
+    // --- Core Logic ---
     function renderDates() {
         const head = document.getElementById('date-head');
+        head.innerHTML = '<th>Habit</th>';
         const today = new Date();
         for(let i=4; i>=0; i--) {
             let d = new Date(); d.setDate(today.getDate() - i);
-            head.innerHTML += `<th>${d.getDate()}/${d.getMonth()+1}</th>`;
+            let th = document.createElement('th');
+            th.innerText = `${d.getDate()}/${d.getMonth()+1}`;
+            head.appendChild(th);
         }
         renderHabits();
     }
@@ -133,6 +267,8 @@
     function renderHabits() {
         const body = document.getElementById('habit-body');
         body.innerHTML = '';
+        const today = new Date().toISOString().split('T')[0];
+
         state.habits.forEach(h => {
             let tr = document.createElement('tr');
             tr.innerHTML = `<td class="habit-label">${h}</td>`;
@@ -144,12 +280,13 @@
             }
             body.appendChild(tr);
         });
-        updateChart();
-    }
 
-    function addHabit() {
-        const val = document.getElementById('newHabit').value;
-        if(val) { state.habits.push(val); renderHabits(); document.getElementById('newHabit').value=''; }
+        // Update Today's Metrics
+        const dailyMins = (state.habitLogs[today] && state.habitLogs[today].studyMinutes) || 0;
+        document.getElementById('studyTimeDisp').innerHTML = `${dailyMins} <span style="font-size: 1rem">mins</span>`;
+        document.getElementById('studyBar').style.width = Math.min((dailyMins / 120) * 100, 100) + '%';
+        
+        updateChart();
     }
 
     function toggleH(d, h) {
@@ -158,22 +295,84 @@
         updateChart();
     }
 
+    function addHabit() {
+        const val = document.getElementById('newHabit').value;
+        if(val) { state.habits.push(val); renderHabits(); document.getElementById('newHabit').value=''; }
+    }
+
+    // --- Timer Logic ---
+    function toggleTimer() {
+        const btn = document.getElementById('timerToggle');
+        if(!timerActive) {
+            timerActive = true;
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+            btn.classList.add('active');
+            timerInterval = setInterval(() => {
+                secondsLeft--;
+                updateTimerDisplay();
+                if(secondsLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerFinished();
+                }
+            }, 1000);
+        } else {
+            stopTimer();
+        }
+    }
+
+    function stopTimer() {
+        const btn = document.getElementById('timerToggle');
+        timerActive = false;
+        clearInterval(timerInterval);
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+        btn.classList.remove('active');
+    }
+
+    function resetTimer() {
+        stopTimer();
+        secondsLeft = 25 * 60;
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+        document.getElementById('timer').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+    }
+
+    function timerFinished() {
+        const today = new Date().toISOString().split('T')[0];
+        if(!state.habitLogs[today]) state.habitLogs[today] = {};
+        
+        // Add 25 mins to log
+        state.habitLogs[today].studyMinutes = (state.habitLogs[today].studyMinutes || 0) + 25;
+        
+        // Auto-check Study Habit if time > 25
+        if(state.habitLogs[today].studyMinutes >= 25) {
+            state.habitLogs[today]["Study"] = true;
+        }
+        
+        alert("Session Complete! 25 minutes added to ADITYA Insights.");
+        resetTimer();
+        renderHabits();
+    }
+
+    // --- To-Do Logic ---
     function renderTodos() {
         const list = document.getElementById('todo-list');
         list.innerHTML = '';
-        // Sort: Critical First, then Incomplete
         const sorted = [...state.todos].sort((a,b) => b.critical - a.critical || a.done - b.done);
         
-        sorted.forEach((t, i) => {
+        sorted.forEach(t => {
             const div = document.createElement('div');
             div.className = `todo-item ${t.critical ? 'critical' : ''} ${t.done ? 'done' : ''}`;
             div.innerHTML = `
                 <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleT(${state.todos.indexOf(t)})">
-                <div style="margin-left:10px">
+                <div style="margin-left:12px">
                     <span class="tag ${t.cat}">${t.cat}</span>
-                    <p style="display:inline; font-weight:${t.critical?'800':'400'}">${t.text}</p>
+                    <p style="display:inline; font-weight:${t.critical?'bold':'normal'}">${t.text}</p>
                 </div>
-                <button class="btn-del" onclick="delT(${state.todos.indexOf(t)})">×</button>
+                <button class="btn-del" onclick="delT(${state.todos.indexOf(t)})"><i class="fas fa-times"></i></button>
             `;
             list.appendChild(div);
         });
@@ -194,42 +393,97 @@
     function toggleT(i) { state.todos[i].done = !state.todos[i].done; renderTodos(); }
     function delT(i) { state.todos.splice(i, 1); renderTodos(); }
 
+    // --- Chart & Score Logic ---
     let chart;
     function updateChart() {
         const ctx = document.getElementById('dayChart').getContext('2d');
         const today = new Date().toISOString().split('T')[0];
-        const data = state.habits.map(h => (state.habitLogs[today] && state.habitLogs[today][h]) ? 100 : 0);
+        
+        let completedCount = 0;
+        const data = state.habits.map(h => {
+            const isDone = (state.habitLogs[today] && state.habitLogs[today][h]);
+            if(isDone) completedCount++;
+            return isDone ? 100 : 0;
+        });
+
+        // Update Score UI
+        const score = Math.round((completedCount / state.habits.length) * 100);
+        document.getElementById('dailyScore').innerText = score + '%';
+        
         if(chart) chart.destroy();
         chart = new Chart(ctx, {
             type: 'bar',
-            data: { labels: state.habits, datasets: [{ label: 'Today Progress %', data, backgroundColor: '#0ea5e9' }] },
-            options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+            data: { 
+                labels: state.habits, 
+                datasets: [{ 
+                    label: 'Today Completion', 
+                    data, 
+                    backgroundColor: '#38bdf8',
+                    borderRadius: 8
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                scales: { 
+                    y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } },
+                    x: { grid: { display: false } }
+                }
+            }
         });
     }
 
+    // --- GitHub Sync ---
     async function loadFromGitHub() {
         try {
             const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`);
+            if(!r.ok) throw new Error("File not found");
             const d = await r.json();
             state.sha = d.sha;
             const content = JSON.parse(atob(d.content));
-            state = { ...state, ...content, sha: d.sha };
-            renderHabits(); renderTodos();
-        } catch(e) { console.log("New setup"); }
+            
+            // Merge loaded data with local state
+            state.habits = content.habits || state.habits;
+            state.habitLogs = content.habitLogs || {};
+            state.todos = content.todos || [];
+            
+            renderHabits(); 
+            renderTodos();
+        } catch(e) { console.log("Starting fresh..."); renderHabits(); renderTodos(); }
     }
 
     async function syncData() {
-        const content = btoa(JSON.stringify({ habits: state.habits, habitLogs: state.habitLogs, todos: state.todos }));
-        const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
-            method: 'PUT',
-            headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: "Update Data", content, sha: state.sha })
-        });
-        if(r.ok) { const j = await r.json(); state.sha = j.content.sha; alert("Data Synced!"); }
+        const btn = document.getElementById('syncBtn');
+        btn.innerHTML = '<i class="fas fa-spinner sync-loading"></i> Syncing...';
+        
+        try {
+            const payload = {
+                habits: state.habits,
+                habitLogs: state.habitLogs,
+                todos: state.todos
+            };
+            const content = btoa(JSON.stringify(payload));
+            
+            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: "ADITYA Insights Sync", content, sha: state.sha })
+            });
+
+            if(r.ok) {
+                const j = await r.json();
+                state.sha = j.content.sha;
+                btn.innerHTML = '<i class="fas fa-check"></i> Success';
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Cloud Sync'; }, 2000);
+            } else {
+                throw new Error("Sync failed");
+            }
+        } catch(e) {
+            btn.innerHTML = '<i class="fas fa-times"></i> Error';
+            console.error(e);
+        }
     }
 
     init();
 </script>
 </body>
 </html>
-
