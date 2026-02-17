@@ -261,14 +261,19 @@
             th.innerText = `${d.getDate()}/${d.getMonth()+1}`;
             head.appendChild(th);
         }
-        renderHabits();
+        refreshUI();
     }
 
-    function renderHabits() {
+    function refreshUI() {
+        renderHabitTable();
+        renderTodos();
+        updateTopStats();
+        updateChart();
+    }
+
+    function renderHabitTable() {
         const body = document.getElementById('habit-body');
         body.innerHTML = '';
-        const today = new Date().toISOString().split('T')[0];
-
         state.habits.forEach(h => {
             let tr = document.createElement('tr');
             tr.innerHTML = `<td class="habit-label">${h}</td>`;
@@ -280,24 +285,40 @@
             }
             body.appendChild(tr);
         });
+    }
 
-        // Update Today's Metrics
+    function updateTopStats() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Update Study Progress
         const dailyMins = (state.habitLogs[today] && state.habitLogs[today].studyMinutes) || 0;
         document.getElementById('studyTimeDisp').innerHTML = `${dailyMins} <span style="font-size: 1rem">mins</span>`;
         document.getElementById('studyBar').style.width = Math.min((dailyMins / 120) * 100, 100) + '%';
+
+        // Update Daily Score
+        let completedCount = 0;
+        state.habits.forEach(h => {
+            if(state.habitLogs[today] && state.habitLogs[today][h]) completedCount++;
+        });
+        const score = state.habits.length > 0 ? Math.round((completedCount / state.habits.length) * 100) : 0;
+        document.getElementById('dailyScore').innerText = score + '%';
         
-        updateChart();
+        const msg = document.getElementById('scoreMessage');
+        if(score === 100) msg.innerText = "Excellent! You conquered the day.";
+        else if(score > 50) msg.innerText = "Great job! Almost there.";
+        else msg.innerText = "Keep pushing! Every step counts.";
     }
 
     function toggleH(d, h) {
         if(!state.habitLogs[d]) state.habitLogs[d] = {};
         state.habitLogs[d][h] = !state.habitLogs[d][h];
+        updateTopStats();
         updateChart();
     }
 
     function addHabit() {
         const val = document.getElementById('newHabit').value;
-        if(val) { state.habits.push(val); renderHabits(); document.getElementById('newHabit').value=''; }
+        if(val) { state.habits.push(val); refreshUI(); document.getElementById('newHabit').value=''; }
     }
 
     // --- Timer Logic ---
@@ -344,7 +365,6 @@
         const today = new Date().toISOString().split('T')[0];
         if(!state.habitLogs[today]) state.habitLogs[today] = {};
         
-        // Add 25 mins to log
         state.habitLogs[today].studyMinutes = (state.habitLogs[today].studyMinutes || 0) + 25;
         
         // Auto-check Study Habit if time > 25
@@ -354,7 +374,7 @@
         
         alert("Session Complete! 25 minutes added to ADITYA Insights.");
         resetTimer();
-        renderHabits();
+        refreshUI();
     }
 
     // --- To-Do Logic ---
@@ -365,14 +385,15 @@
         
         sorted.forEach(t => {
             const div = document.createElement('div');
+            const actualIdx = state.todos.indexOf(t);
             div.className = `todo-item ${t.critical ? 'critical' : ''} ${t.done ? 'done' : ''}`;
             div.innerHTML = `
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleT(${state.todos.indexOf(t)})">
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleT(${actualIdx})">
                 <div style="margin-left:12px">
                     <span class="tag ${t.cat}">${t.cat}</span>
                     <p style="display:inline; font-weight:${t.critical?'bold':'normal'}">${t.text}</p>
                 </div>
-                <button class="btn-del" onclick="delT(${state.todos.indexOf(t)})"><i class="fas fa-times"></i></button>
+                <button class="btn-del" onclick="delT(${actualIdx})"><i class="fas fa-times"></i></button>
             `;
             list.appendChild(div);
         });
@@ -393,23 +414,16 @@
     function toggleT(i) { state.todos[i].done = !state.todos[i].done; renderTodos(); }
     function delT(i) { state.todos.splice(i, 1); renderTodos(); }
 
-    // --- Chart & Score Logic ---
+    // --- Chart Logic ---
     let chart;
     function updateChart() {
         const ctx = document.getElementById('dayChart').getContext('2d');
         const today = new Date().toISOString().split('T')[0];
         
-        let completedCount = 0;
         const data = state.habits.map(h => {
-            const isDone = (state.habitLogs[today] && state.habitLogs[today][h]);
-            if(isDone) completedCount++;
-            return isDone ? 100 : 0;
+            return (state.habitLogs[today] && state.habitLogs[today][h]) ? 100 : 0;
         });
 
-        // Update Score UI
-        const score = Math.round((completedCount / state.habits.length) * 100);
-        document.getElementById('dailyScore').innerText = score + '%';
-        
         if(chart) chart.destroy();
         chart = new Chart(ctx, {
             type: 'bar',
@@ -441,18 +455,17 @@
             state.sha = d.sha;
             const content = JSON.parse(atob(d.content));
             
-            // Merge loaded data with local state
             state.habits = content.habits || state.habits;
             state.habitLogs = content.habitLogs || {};
             state.todos = content.todos || [];
             
-            renderHabits(); 
-            renderTodos();
-        } catch(e) { console.log("Starting fresh..."); renderHabits(); renderTodos(); }
+            refreshUI();
+        } catch(e) { console.log("Starting fresh..."); refreshUI(); }
     }
 
     async function syncData() {
         const btn = document.getElementById('syncBtn');
+        const oldHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner sync-loading"></i> Syncing...';
         
         try {
@@ -473,13 +486,13 @@
                 const j = await r.json();
                 state.sha = j.content.sha;
                 btn.innerHTML = '<i class="fas fa-check"></i> Success';
-                setTimeout(() => { btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Cloud Sync'; }, 2000);
+                setTimeout(() => { btn.innerHTML = oldHtml; }, 2000);
             } else {
                 throw new Error("Sync failed");
             }
         } catch(e) {
             btn.innerHTML = '<i class="fas fa-times"></i> Error';
-            console.error(e);
+            setTimeout(() => { btn.innerHTML = oldHtml; }, 3000);
         }
     }
 
