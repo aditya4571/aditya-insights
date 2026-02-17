@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADITYA Insights | Ultra</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Added SheetJS for Excel generation -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg: #020617;
             --card: #0f172a;
-            --card-hover: #1e293b;
             --accent: #38bdf8;
             --accent-glow: rgba(56, 189, 248, 0.3);
             --text: #f8fafc;
@@ -27,114 +25,36 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s ease; }
-        body { 
-            font-family: 'Inter', system-ui, -apple-system; 
-            background: var(--bg); 
-            color: var(--text); 
-            padding: 15px;
-            overflow-x: hidden;
-        }
-
+        body { font-family: 'Inter', system-ui; background: var(--bg); color: var(--text); padding: 15px; }
         .container { max-width: 1400px; margin: auto; }
 
-        /* --- Header --- */
-        header { 
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 25px;
-        }
-        .brand h1 { 
-            font-size: 1.8rem; font-weight: 800; letter-spacing: -1px;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 25px; }
+        .brand h1 { font-size: 1.8rem; font-weight: 800; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* --- Layout Grids --- */
-        .dashboard-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 20px; 
-            margin-bottom: 25px;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .main-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+        @media (max-width: 1100px) { .main-layout { grid-template-columns: 1fr; } }
 
-        .main-layout { 
-            display: grid; 
-            grid-template-columns: 2fr 1fr; 
-            gap: 25px; 
-        }
-
-        @media (max-width: 1100px) {
-            .dashboard-grid { grid-template-columns: 1fr 1fr; }
-            .main-layout { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 700px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
-
-        .card { 
-            background: var(--card); 
-            border-radius: 20px; 
-            border: 1px solid var(--border); 
-            padding: 24px; 
-            position: relative;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        /* --- Focus Timer --- */
-        .timer-display { 
-            font-size: 3.5rem; font-weight: 800; text-align: center; 
-            margin: 10px 0; font-variant-numeric: tabular-nums;
-            text-shadow: 0 0 20px var(--accent-glow);
-        }
+        .card { background: var(--card); border-radius: 20px; border: 1px solid var(--border); padding: 24px; position: relative; }
+        
+        .timer-display { font-size: 3.5rem; font-weight: 800; text-align: center; margin: 10px 0; text-shadow: 0 0 20px var(--accent-glow); }
         .timer-controls { display: flex; justify-content: center; gap: 15px; }
-        .btn-timer {
-            width: 50px; height: 50px; border-radius: 50%; border: none;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; background: var(--border); color: white;
-        }
+        .btn-timer { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--border); color: white; }
         .btn-timer.active { background: var(--accent); color: var(--bg); box-shadow: 0 0 15px var(--accent); }
 
-        /* --- Stats Cards --- */
         .stat-val { font-size: 2rem; font-weight: 700; color: var(--accent); }
-        .stat-label { color: var(--text-dim); font-size: 0.9rem; margin-top: 5px; }
-
-        /* --- Habit Table --- */
         .table-scroll { overflow-x: auto; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
         th, td { padding: 16px; text-align: center; border-bottom: 1px solid var(--border); }
-        .habit-label { text-align: left; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
         
-        input[type="checkbox"] {
-            width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent);
-        }
-
-        /* --- To-Do --- */
-        .todo-input-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .input-row { display: flex; gap: 10px; }
-        input[type="text"], select { 
-            background: #1e293b; border: 1px solid var(--border); 
-            color: white; padding: 12px; border-radius: 10px; flex: 1;
-        }
-        .todo-item { 
-            display: flex; align-items: center; padding: 14px; background: rgba(30, 41, 59, 0.5); 
-            border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--border);
-        }
+        .todo-item { display: flex; align-items: center; padding: 14px; background: rgba(30, 41, 59, 0.5); border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--border); }
         .todo-item.critical { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
         .todo-item.done { opacity: 0.5; filter: grayscale(1); }
-        .tag { font-size: 10px; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; font-weight: 800; margin-right: 10px; }
-        .tag.Railway { background: var(--cat-railway); }
-        .tag.Work { background: var(--cat-work); }
-        .tag.Family { background: var(--cat-family); }
-        
-        /* --- Buttons --- */
-        .btn { 
-            background: var(--accent); color: var(--bg); border: none; 
-            padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .btn-sync { background: var(--success); color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
-        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
-        .btn-del { color: var(--danger); margin-left: auto; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
 
+        .btn { background: var(--accent); color: var(--bg); border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-sync { background: var(--success); color: white; }
+        .btn-excel { background: #1d6f42; color: white; margin-left: 10px; }
+        
         .sync-loading { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
@@ -144,12 +64,16 @@
 <div class="container">
     <header>
         <div class="brand"><h1>ADITYA Insights</h1></div>
-        <button class="btn btn-sync" id="syncBtn" onclick="syncData()">
-            <i class="fas fa-cloud-upload-alt"></i> Cloud Sync
-        </button>
+        <div style="display: flex;">
+            <button class="btn btn-sync" id="syncBtn" onclick="syncData()">
+                <i class="fas fa-cloud-upload-alt"></i> Cloud Sync
+            </button>
+            <button class="btn btn-excel" onclick="downloadExcelLocally()">
+                <i class="fas fa-file-excel"></i> Export
+            </button>
+        </div>
     </header>
 
-    <!-- Top Stats / Timer Row -->
     <div class="dashboard-grid">
         <div class="card">
             <h3>Focus Timer</h3>
@@ -162,7 +86,6 @@
         <div class="card">
             <h3>Study Progress</h3>
             <div class="stat-val" id="studyTimeDisp">0 <span style="font-size: 1rem">mins</span></div>
-            <div class="stat-label">Total focus today</div>
             <div style="margin-top: 15px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
                 <div id="studyBar" style="height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 10px var(--accent);"></div>
             </div>
@@ -170,19 +93,17 @@
         <div class="card">
             <h3>Daily Score</h3>
             <div class="stat-val" id="dailyScore">0%</div>
-            <div class="stat-label">Habit completion rate</div>
-            <p id="scoreMessage" style="font-size: 0.8rem; margin-top: 10px; color: var(--text-dim);">Keep pushing!</p>
+            <p id="scoreMessage" style="font-size: 0.8rem; margin-top: 10px; color: var(--text-dim);">Ready to start?</p>
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-layout">
         <div class="main-sec">
-            <div class="card">
+            <div class="card" style="margin-bottom: 25px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3>Habit Tracker</h3>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="newHabit" placeholder="New habit name..." style="padding: 8px;">
+                        <input type="text" id="newHabit" placeholder="New habit..." style="background:#1e293b; color:white; border:1px solid var(--border); padding:8px; border-radius:5px;">
                         <button class="btn" style="padding: 8px 15px;" onclick="addHabit()"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
@@ -193,37 +114,27 @@
                     </table>
                 </div>
             </div>
-            
-            <div class="card">
-                <h3>Today's Performance</h3>
-                <canvas id="dayChart" height="100"></canvas>
-            </div>
-
-            <div class="card">
-                <h3>Last 4 Days Comparison</h3>
-                <canvas id="comparisonChart" height="120"></canvas>
-            </div>
+            <div class="card" style="margin-bottom: 25px;"><canvas id="dayChart" height="100"></canvas></div>
+            <div class="card"><canvas id="comparisonChart" height="120"></canvas></div>
         </div>
 
         <div class="side-sec">
             <div class="card">
                 <h3>Priority Tasks</h3>
-                <div class="todo-input-group">
-                    <input type="text" id="todoIn" placeholder="What needs to be done?">
-                    <div class="input-row">
-                        <select id="todoCat">
+                <div style="margin-bottom: 20px;">
+                    <input type="text" id="todoIn" placeholder="Task..." style="width:100%; background:#1e293b; color:white; border:1px solid var(--border); padding:12px; border-radius:10px; margin-bottom:10px;">
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <select id="todoCat" style="flex:1; background:#1e293b; color:white; border:1px solid var(--border); padding:10px; border-radius:10px;">
                             <option value="General">General</option>
                             <option value="Railway">Railway</option>
                             <option value="Work">Work</option>
                             <option value="Family">Family</option>
                         </select>
-                        <label style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--danger); cursor: pointer; font-weight: 700;">
+                        <label style="color:var(--danger); font-size:0.7rem; display:flex; align-items:center; font-weight:bold;">
                             <input type="checkbox" id="isCritical"> CRITICAL
                         </label>
                     </div>
-                    <button class="btn" onclick="addTodo()" style="width: 100%; justify-content: center;">
-                        Add Task
-                    </button>
+                    <button class="btn" onclick="addTodo()" style="width:100%; justify-content:center;">Add</button>
                 </div>
                 <div id="todo-list"></div>
             </div>
@@ -232,60 +143,40 @@
 </div>
 
 <script>
-    // --- Configuration ---
     const GH = { 
         token: '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', 
         owner: 'aditya4571', 
         repo: 'aditya-insights', 
         path: 'data.json',
-        excelPath: 'dashboard.xlsx' // The path for the Excel file
+        excelPath: 'dashboard.xlsx'
     };
 
-    let state = { 
-        habits: ["Study", "Exercise", "Meditation"], 
-        habitLogs: {}, 
-        todos: [], 
-        sha: "",
-        shaExcel: "" // Store SHA for Excel file updates
-    };
-
-    // --- Timer State ---
-    let timerInterval;
-    let secondsLeft = 25 * 60;
-    let timerActive = false;
+    let state = { habits: ["Study", "Exercise", "Meditation"], habitLogs: {}, todos: [], sha: "", shaExcel: "" };
+    let timerInterval, secondsLeft = 25 * 60, timerActive = false;
+    let dayChart, compChart;
 
     function init() {
         renderDates();
         loadFromGitHub();
     }
 
-    // --- Core Logic ---
     function renderDates() {
         const head = document.getElementById('date-head');
         head.innerHTML = '<th>Habit</th>';
-        const today = new Date();
         for(let i=4; i>=0; i--) {
-            let d = new Date(); d.setDate(today.getDate() - i);
-            let th = document.createElement('th');
-            th.innerText = `${d.getDate()}/${d.getMonth()+1}`;
-            head.appendChild(th);
+            let d = new Date(); d.setDate(new Date().getDate() - i);
+            head.innerHTML += `<th>${d.getDate()}/${d.getMonth()+1}</th>`;
         }
-        refreshUI();
     }
 
     function refreshUI() {
-        renderHabitTable();
-        renderTodos();
-        updateTopStats();
-        updateCharts();
-    }
-
-    function renderHabitTable() {
         const body = document.getElementById('habit-body');
         body.innerHTML = '';
+        const today = new Date().toISOString().split('T')[0];
+
         state.habits.forEach(h => {
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td class="habit-label">${h}</td>`;
+            tr.innerHTML = `<td style="text-align:left; font-weight:600;">${h}</td>`;
             for(let i=4; i>=0; i--) {
                 let d = new Date(); d.setDate(new Date().getDate() - i);
                 let dStr = d.toISOString().split('T')[0];
@@ -294,312 +185,157 @@
             }
             body.appendChild(tr);
         });
-    }
 
-    function updateTopStats() {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Update Study Progress
-        const dailyMins = (state.habitLogs[today] && state.habitLogs[today].studyMinutes) || 0;
-        document.getElementById('studyTimeDisp').innerHTML = `${dailyMins} <span style="font-size: 1rem">mins</span>`;
-        document.getElementById('studyBar').style.width = Math.min((dailyMins / 120) * 100, 100) + '%';
+        // Stats
+        const mins = (state.habitLogs[today] && state.habitLogs[today].studyMinutes) || 0;
+        document.getElementById('studyTimeDisp').innerHTML = `${mins} <span style="font-size:1rem">mins</span>`;
+        document.getElementById('studyBar').style.width = Math.min((mins/120)*100, 100) + '%';
 
-        // Update Daily Score
-        let completedCount = 0;
-        state.habits.forEach(h => {
-            if(state.habitLogs[today] && state.habitLogs[today][h]) completedCount++;
-        });
-        const score = state.habits.length > 0 ? Math.round((completedCount / state.habits.length) * 100) : 0;
+        let done = 0;
+        state.habits.forEach(h => { if(state.habitLogs[today] && state.habitLogs[today][h]) done++; });
+        const score = state.habits.length ? Math.round((done/state.habits.length)*100) : 0;
         document.getElementById('dailyScore').innerText = score + '%';
-        
-        const msg = document.getElementById('scoreMessage');
-        if(score === 100) msg.innerText = "Excellent! You conquered the day.";
-        else if(score > 50) msg.innerText = "Great job! Almost there.";
-        else msg.innerText = "Keep pushing! Every step counts.";
+
+        renderTodos();
+        updateCharts();
     }
 
     function toggleH(d, h) {
         if(!state.habitLogs[d]) state.habitLogs[d] = {};
         state.habitLogs[d][h] = !state.habitLogs[d][h];
-        updateTopStats();
-        updateCharts();
+        refreshUI();
     }
 
     function addHabit() {
-        const val = document.getElementById('newHabit').value;
-        if(val) { state.habits.push(val); refreshUI(); document.getElementById('newHabit').value=''; }
+        const v = document.getElementById('newHabit').value;
+        if(v) { state.habits.push(v); refreshUI(); document.getElementById('newHabit').value=''; }
     }
 
-    // --- Timer Logic ---
     function toggleTimer() {
-        const btn = document.getElementById('timerToggle');
         if(!timerActive) {
             timerActive = true;
-            btn.innerHTML = '<i class="fas fa-pause"></i>';
-            btn.classList.add('active');
+            document.getElementById('timerToggle').innerHTML = '<i class="fas fa-pause"></i>';
             timerInterval = setInterval(() => {
                 secondsLeft--;
-                updateTimerDisplay();
-                if(secondsLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timerFinished();
-                }
+                updateTimerDisp();
+                if(secondsLeft <= 0) { clearInterval(timerInterval); timerFinished(); }
             }, 1000);
         } else {
-            stopTimer();
+            timerActive = false;
+            clearInterval(timerInterval);
+            document.getElementById('timerToggle').innerHTML = '<i class="fas fa-play"></i>';
         }
     }
 
-    function stopTimer() {
-        const btn = document.getElementById('timerToggle');
-        timerActive = false;
-        clearInterval(timerInterval);
-        btn.innerHTML = '<i class="fas fa-play"></i>';
-        btn.classList.remove('active');
-    }
-
-    function resetTimer() {
-        stopTimer();
-        secondsLeft = 25 * 60;
-        updateTimerDisplay();
-    }
-
-    function updateTimerDisplay() {
-        const mins = Math.floor(secondsLeft / 60);
-        const secs = secondsLeft % 60;
-        document.getElementById('timer').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+    function resetTimer() { secondsLeft = 25 * 60; updateTimerDisp(); }
+    function updateTimerDisp() {
+        const m = Math.floor(secondsLeft/60), s = secondsLeft%60;
+        document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
     function timerFinished() {
         const today = new Date().toISOString().split('T')[0];
         if(!state.habitLogs[today]) state.habitLogs[today] = {};
-        
         state.habitLogs[today].studyMinutes = (state.habitLogs[today].studyMinutes || 0) + 25;
-        
-        // Auto-check Study Habit if time > 25
-        if(state.habitLogs[today].studyMinutes >= 25) {
-            state.habitLogs[today]["Study"] = true;
-        }
-        
-        alert("Session Complete! 25 minutes added to ADITYA Insights.");
-        resetTimer();
-        refreshUI();
+        if(state.habitLogs[today].studyMinutes >= 25) state.habitLogs[today]["Study"] = true;
+        alert("Session Complete!"); resetTimer(); refreshUI();
     }
 
-    // --- To-Do Logic ---
     function renderTodos() {
         const list = document.getElementById('todo-list');
         list.innerHTML = '';
-        const sorted = [...state.todos].sort((a,b) => b.critical - a.critical || a.done - b.done);
-        
-        sorted.forEach(t => {
+        state.todos.sort((a,b) => b.critical - a.critical || a.done - b.done).forEach(t => {
             const div = document.createElement('div');
-            const actualIdx = state.todos.indexOf(t);
-            div.className = `todo-item ${t.critical ? 'critical' : ''} ${t.done ? 'done' : ''}`;
-            div.innerHTML = `
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleT(${actualIdx})">
-                <div style="margin-left:12px">
-                    <span class="tag ${t.cat}">${t.cat}</span>
-                    <p style="display:inline; font-weight:${t.critical?'bold':'normal'}">${t.text}</p>
-                </div>
-                <button class="btn-del" onclick="delT(${actualIdx})"><i class="fas fa-times"></i></button>
-            `;
+            const idx = state.todos.indexOf(t);
+            div.className = `todo-item ${t.critical?'critical':''} ${t.done?'done':''}`;
+            div.innerHTML = `<input type="checkbox" ${t.done?'checked':''} onchange="toggleT(${idx})">
+                <div style="margin-left:12px"><p style="font-weight:${t.critical?'bold':'normal'}">${t.text}</p></div>
+                <button class="btn-del" onclick="delT(${idx})">×</button>`;
             list.appendChild(div);
         });
     }
 
     function addTodo() {
         const text = document.getElementById('todoIn').value;
-        const cat = document.getElementById('todoCat').value;
-        const critical = document.getElementById('isCritical').checked;
         if(text) {
-            state.todos.push({ text, cat, critical, done: false });
-            renderTodos();
-            document.getElementById('todoIn').value = '';
-            document.getElementById('isCritical').checked = false;
+            state.todos.push({ text, cat: document.getElementById('todoCat').value, critical: document.getElementById('isCritical').checked, done: false });
+            refreshUI(); document.getElementById('todoIn').value = '';
         }
     }
-
-    function toggleT(i) { state.todos[i].done = !state.todos[i].done; renderTodos(); }
-    function delT(i) { state.todos.splice(i, 1); renderTodos(); }
-
-    // --- Chart Logic ---
-    let dayChart, comparisonChart;
+    function toggleT(i) { state.todos[i].done = !state.todos[i].done; refreshUI(); }
+    function delT(i) { state.todos.splice(i, 1); refreshUI(); }
 
     function updateCharts() {
-        updateDayChart();
-        updateComparisonChart();
-    }
-
-    function updateDayChart() {
-        const ctx = document.getElementById('dayChart').getContext('2d');
         const today = new Date().toISOString().split('T')[0];
-        const data = state.habits.map(h => (state.habitLogs[today] && state.habitLogs[today][h]) ? 100 : 0);
-
-        if(dayChart) dayChart.destroy();
-        dayChart = new Chart(ctx, {
-            type: 'bar',
-            data: { 
-                labels: state.habits, 
-                datasets: [{ 
-                    label: 'Completion %', 
-                    data, 
-                    backgroundColor: '#38bdf8',
-                    borderRadius: 8
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                scales: { 
-                    y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    }
-
-    function updateComparisonChart() {
-        const ctx = document.getElementById('comparisonChart').getContext('2d');
-        const labels = state.habits;
-        const datasets = [];
-        const colors = ['#38bdf8', '#818cf8', '#a78bfa', '#c084fc', '#e879f9'];
-
-        for (let i = 0; i < 5; i++) {
-            let d = new Date();
-            d.setDate(d.getDate() - i);
-            let dStr = d.toISOString().split('T')[0];
-            let data = state.habits.map(h => (state.habitLogs[dStr] && state.habitLogs[dStr][h]) ? 100 : 0);
-            
-            datasets.push({
-                label: i === 0 ? 'Today' : `${d.getDate()}/${d.getMonth()+1}`,
-                data,
-                backgroundColor: colors[i % colors.length],
-                borderRadius: 4
-            });
-        }
-
-        if(comparisonChart) comparisonChart.destroy();
-        comparisonChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: true, max: 100, grid: { color: '#1e293b' } },
-                    x: { grid: { display: false } }
-                },
-                plugins: {
-                    legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
-                }
-            }
-        });
-    }
-
-    // --- Excel Generation Logic ---
-    function generateExcelBase64() {
-        const dates = Object.keys(state.habitLogs).sort().reverse();
-        const aoa = [
-            ["Date", ...state.habits, "Study Minutes"]
-        ];
-
-        dates.forEach(date => {
-            const row = [date];
-            state.habits.forEach(h => {
-                row.push(state.habitLogs[date][h] ? "YES" : "NO");
-            });
-            row.push(state.habitLogs[date].studyMinutes || 0);
-            aoa.push(row);
-        });
-
-        const ws = XLSX.utils.aoa_to_sheet(aoa);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Habit Logs");
-
-        // Generate binary string and convert to base64
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-        function s2ab(s) {
-            const buf = new ArrayBuffer(s.length);
-            const view = new Uint8Array(buf);
-            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-            return buf;
-        }
+        const dayData = state.habits.map(h => (state.habitLogs[today] && state.habitLogs[today][h]) ? 100 : 0);
         
-        // Convert binary to base64
-        const binary = String.fromCharCode.apply(null, new Uint8Array(s2ab(wbout)));
-        return window.btoa(binary);
+        if(dayChart) dayChart.destroy();
+        dayChart = new Chart(document.getElementById('dayChart'), {
+            type: 'bar', data: { labels: state.habits, datasets: [{ label: 'Today %', data: dayData, backgroundColor: '#38bdf8' }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+
+        const compDatasets = [];
+        for(let i=0; i<4; i++) {
+            let d = new Date(); d.setDate(d.getDate() - i);
+            let dStr = d.toISOString().split('T')[0];
+            compDatasets.push({ label: i===0?'Today':d.getDate()+'/'+(d.getMonth()+1), data: state.habits.map(h => (state.habitLogs[dStr] && state.habitLogs[dStr][h])?100:0), backgroundColor: `rgba(56, 189, 248, ${1 - i*0.2})` });
+        }
+        if(compChart) compChart.destroy();
+        compChart = new Chart(document.getElementById('comparisonChart'), { type:'bar', data: { labels: state.habits, datasets: compDatasets }, options: { responsive: true, scales: { y: { max:100 } } } });
     }
 
-    // --- GitHub Sync ---
+    function getExcelBase64() {
+        const rows = [["Date", ...state.habits, "Study Minutes"]];
+        Object.keys(state.habitLogs).sort().reverse().forEach(d => {
+            const r = [d];
+            state.habits.forEach(h => r.push(state.habitLogs[d][h] ? "YES" : "NO"));
+            r.push(state.habitLogs[d].studyMinutes || 0);
+            rows.push(r);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Logs");
+        const out = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+        return out;
+    }
+
+    function downloadExcelLocally() {
+        const rows = [["Date", ...state.habits, "Study Minutes"]];
+        Object.keys(state.habitLogs).sort().reverse().forEach(d => {
+            const r = [d];
+            state.habits.forEach(h => r.push(state.habitLogs[d][h] ? "YES" : "NO"));
+            r.push(state.habitLogs[d].studyMinutes || 0);
+            rows.push(r);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Logs");
+        XLSX.writeFile(wb, "Aditya_Insights_Export.xlsx");
+    }
+
     async function loadFromGitHub() {
         try {
-            // Fetch JSON state
-            const rJson = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`);
-            if(rJson.ok) {
-                const dJson = await rJson.json();
-                state.sha = dJson.sha;
-                const content = JSON.parse(atob(dJson.content));
-                state.habits = content.habits || state.habits;
-                state.habitLogs = content.habitLogs || {};
-                state.todos = content.todos || [];
-            }
-
-            // Fetch Excel SHA if exists
-            const rExcel = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`);
-            if(rExcel.ok) {
-                const dExcel = await rExcel.json();
-                state.shaExcel = dExcel.sha;
-            }
-            
+            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, { headers: { 'Authorization': `token ${GH.token}` } });
+            if(r.ok) { const d = await r.json(); state.sha = d.sha; Object.assign(state, JSON.parse(atob(d.content))); }
+            const rE = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, { headers: { 'Authorization': `token ${GH.token}` } });
+            if(rE.ok) { const dE = await rE.json(); state.shaExcel = dE.sha; }
             refreshUI();
-        } catch(e) { console.log("Init failed, using local state...", e); refreshUI(); }
+        } catch(e) { refreshUI(); }
     }
 
     async function syncData() {
-        const btn = document.getElementById('syncBtn');
-        const oldHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner sync-loading"></i> Syncing...';
-        
+        const b = document.getElementById('syncBtn'); b.innerHTML = '<i class="fas fa-spinner sync-loading"></i>...';
         try {
-            // 1. Sync JSON Data
-            const payloadJson = {
-                habits: state.habits,
-                habitLogs: state.habitLogs,
-                todos: state.todos
-            };
-            const contentJson = btoa(JSON.stringify(payloadJson));
+            const content = btoa(JSON.stringify({ habits: state.habits, habitLogs: state.habitLogs, todos: state.todos }));
+            const r1 = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, { method: 'PUT', headers: { 'Authorization': `token ${GH.token}` }, body: JSON.stringify({ message: "Sync JSON", content, sha: state.sha }) });
+            if(r1.ok) state.sha = (await r1.json()).content.sha;
+
+            const excelContent = getExcelBase64();
+            const r2 = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, { method: 'PUT', headers: { 'Authorization': `token ${GH.token}` }, body: JSON.stringify({ message: "Sync Excel", content: excelContent, sha: state.shaExcel }) });
+            if(r2.ok) state.shaExcel = (await r2.json()).content.sha;
             
-            const resJson = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Sync Data (JSON)", content: contentJson, sha: state.sha })
-            });
-
-            if(resJson.ok) {
-                const j = await resJson.json();
-                state.sha = j.content.sha;
-            }
-
-            // 2. Sync Excel Spreadsheet
-            const excelContentBase64 = generateExcelBase64();
-            const resExcel = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Sync Spreadsheet (Excel)", content: excelContentBase64, sha: state.shaExcel })
-            });
-
-            if(resExcel.ok) {
-                const jExcel = await resExcel.json();
-                state.shaExcel = jExcel.content.sha;
-                btn.innerHTML = '<i class="fas fa-check"></i> Success';
-                setTimeout(() => { btn.innerHTML = oldHtml; }, 2000);
-            } else {
-                throw new Error("Excel Sync failed");
-            }
-        } catch(e) {
-            btn.innerHTML = '<i class="fas fa-times"></i> Error';
-            console.error(e);
-            setTimeout(() => { btn.innerHTML = oldHtml; }, 3000);
-        }
+            b.innerHTML = '<i class="fas fa-check"></i> Done';
+            setTimeout(() => b.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Cloud Sync', 2000);
+        } catch(e) { b.innerHTML = 'Error'; }
     }
 
     init();
