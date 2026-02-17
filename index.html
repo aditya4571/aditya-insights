@@ -154,45 +154,72 @@
     let state = { habits: ["Study", "Exercise", "Meditation"], habitLogs: {}, todos: [], sha: "", shaExcel: "" };
     let timerInterval, secondsLeft = 25 * 60, timerActive = false;
     let dayChart, compChart;
+    
+    // IST Helper: Returns YYYY-MM-DD for India time
+    function getISTDateString(date = new Date()) {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(date);
+    }
+
+    let lastCheckedISTDate = getISTDateString();
 
     function init() {
         renderDates();
         loadFromGitHub();
+        // Check for date rollover every minute
+        setInterval(checkDateChange, 60000);
+    }
+
+    function checkDateChange() {
+        const currentIST = getISTDateString();
+        if (currentIST !== lastCheckedISTDate) {
+            lastCheckedISTDate = currentIST;
+            renderDates();
+            refreshUI();
+        }
     }
 
     function renderDates() {
         const head = document.getElementById('date-head');
         head.innerHTML = '<th>Habit</th>';
         for(let i=4; i>=0; i--) {
-            let d = new Date(); d.setDate(new Date().getDate() - i);
-            head.innerHTML += `<th>${d.getDate()}/${d.getMonth()+1}</th>`;
+            let d = new Date(); 
+            // Calculate IST-relative previous days
+            d.setDate(d.getDate() - i);
+            const istLabel = i === 0 ? "Today" : `${d.getDate()}/${d.getMonth()+1}`;
+            head.innerHTML += `<th>${istLabel}</th>`;
         }
     }
 
     function refreshUI() {
         const body = document.getElementById('habit-body');
         body.innerHTML = '';
-        const today = new Date().toISOString().split('T')[0];
+        const todayStr = getISTDateString();
 
         state.habits.forEach(h => {
             let tr = document.createElement('tr');
             tr.innerHTML = `<td style="text-align:left; font-weight:600;">${h}</td>`;
             for(let i=4; i>=0; i--) {
-                let d = new Date(); d.setDate(new Date().getDate() - i);
-                let dStr = d.toISOString().split('T')[0];
+                let d = new Date(); 
+                d.setDate(d.getDate() - i);
+                let dStr = getISTDateString(d);
                 let checked = (state.habitLogs[dStr] && state.habitLogs[dStr][h]) ? 'checked' : '';
                 tr.innerHTML += `<td><input type="checkbox" onchange="toggleH('${dStr}','${h}')" ${checked}></td>`;
             }
             body.appendChild(tr);
         });
 
-        // Stats
-        const mins = (state.habitLogs[today] && state.habitLogs[today].studyMinutes) || 0;
+        // Stats Card Updates
+        const mins = (state.habitLogs[todayStr] && state.habitLogs[todayStr].studyMinutes) || 0;
         document.getElementById('studyTimeDisp').innerHTML = `${mins} <span style="font-size:1rem">mins</span>`;
         document.getElementById('studyBar').style.width = Math.min((mins/120)*100, 100) + '%';
 
         let done = 0;
-        state.habits.forEach(h => { if(state.habitLogs[today] && state.habitLogs[today][h]) done++; });
+        state.habits.forEach(h => { if(state.habitLogs[todayStr] && state.habitLogs[todayStr][h]) done++; });
         const score = state.habits.length ? Math.round((done/state.habits.length)*100) : 0;
         document.getElementById('dailyScore').innerText = score + '%';
 
@@ -234,11 +261,11 @@
     }
 
     function timerFinished() {
-        const today = new Date().toISOString().split('T')[0];
-        if(!state.habitLogs[today]) state.habitLogs[today] = {};
-        state.habitLogs[today].studyMinutes = (state.habitLogs[today].studyMinutes || 0) + 25;
-        if(state.habitLogs[today].studyMinutes >= 25) state.habitLogs[today]["Study"] = true;
-        alert("Session Complete!"); resetTimer(); refreshUI();
+        const todayStr = getISTDateString();
+        if(!state.habitLogs[todayStr]) state.habitLogs[todayStr] = {};
+        state.habitLogs[todayStr].studyMinutes = (state.habitLogs[todayStr].studyMinutes || 0) + 25;
+        if(state.habitLogs[todayStr].studyMinutes >= 25) state.habitLogs[todayStr]["Study"] = true;
+        alert("Session Complete! IST Log Updated."); resetTimer(); refreshUI();
     }
 
     function renderTodos() {
@@ -266,19 +293,19 @@
     function delT(i) { state.todos.splice(i, 1); refreshUI(); }
 
     function updateCharts() {
-        const today = new Date().toISOString().split('T')[0];
-        const dayData = state.habits.map(h => (state.habitLogs[today] && state.habitLogs[today][h]) ? 100 : 0);
+        const todayStr = getISTDateString();
+        const dayData = state.habits.map(h => (state.habitLogs[todayStr] && state.habitLogs[todayStr][h]) ? 100 : 0);
         
         if(dayChart) dayChart.destroy();
         dayChart = new Chart(document.getElementById('dayChart'), {
-            type: 'bar', data: { labels: state.habits, datasets: [{ label: 'Today %', data: dayData, backgroundColor: '#38bdf8' }] },
+            type: 'bar', data: { labels: state.habits, datasets: [{ label: 'Today (IST) %', data: dayData, backgroundColor: '#38bdf8' }] },
             options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
         });
 
         const compDatasets = [];
         for(let i=0; i<4; i++) {
             let d = new Date(); d.setDate(d.getDate() - i);
-            let dStr = d.toISOString().split('T')[0];
+            let dStr = getISTDateString(d);
             compDatasets.push({ label: i===0?'Today':d.getDate()+'/'+(d.getMonth()+1), data: state.habits.map(h => (state.habitLogs[dStr] && state.habitLogs[dStr][h])?100:0), backgroundColor: `rgba(56, 189, 248, ${1 - i*0.2})` });
         }
         if(compChart) compChart.destroy();
@@ -286,7 +313,7 @@
     }
 
     function getExcelBase64() {
-        const rows = [["Date", ...state.habits, "Study Minutes"]];
+        const rows = [["Date (IST)", ...state.habits, "Study Minutes"]];
         Object.keys(state.habitLogs).sort().reverse().forEach(d => {
             const r = [d];
             state.habits.forEach(h => r.push(state.habitLogs[d][h] ? "YES" : "NO"));
@@ -294,13 +321,12 @@
             rows.push(r);
         });
         const ws = XLSX.utils.aoa_to_sheet(rows), wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Logs");
-        const out = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
-        return out;
+        XLSX.utils.book_append_sheet(wb, ws, "IST Logs");
+        return XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
     }
 
     function downloadExcelLocally() {
-        const rows = [["Date", ...state.habits, "Study Minutes"]];
+        const rows = [["Date (IST)", ...state.habits, "Study Minutes"]];
         Object.keys(state.habitLogs).sort().reverse().forEach(d => {
             const r = [d];
             state.habits.forEach(h => r.push(state.habitLogs[d][h] ? "YES" : "NO"));
@@ -308,32 +334,33 @@
             rows.push(r);
         });
         const ws = XLSX.utils.aoa_to_sheet(rows), wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Logs");
-        XLSX.writeFile(wb, "Aditya_Insights_Export.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "IST Logs");
+        XLSX.writeFile(wb, "Aditya_Insights_IST.xlsx");
     }
 
     async function loadFromGitHub() {
         try {
-            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, { headers: { 'Authorization': `token ${GH.token}` } });
+            const headers = { 'Authorization': `token ${GH.token}` };
+            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, { headers });
             if(r.ok) { const d = await r.json(); state.sha = d.sha; Object.assign(state, JSON.parse(atob(d.content))); }
-            const rE = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, { headers: { 'Authorization': `token ${GH.token}` } });
+            const rE = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, { headers });
             if(rE.ok) { const dE = await rE.json(); state.shaExcel = dE.sha; }
             refreshUI();
         } catch(e) { refreshUI(); }
     }
 
     async function syncData() {
-        const b = document.getElementById('syncBtn'); b.innerHTML = '<i class="fas fa-spinner sync-loading"></i>...';
+        const b = document.getElementById('syncBtn'); b.innerHTML = '<i class="fas fa-spinner sync-loading"></i> IST Sync...';
         try {
             const content = btoa(JSON.stringify({ habits: state.habits, habitLogs: state.habitLogs, todos: state.todos }));
-            const r1 = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, { method: 'PUT', headers: { 'Authorization': `token ${GH.token}` }, body: JSON.stringify({ message: "Sync JSON", content, sha: state.sha }) });
+            const r1 = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, { method: 'PUT', headers: { 'Authorization': `token ${GH.token}` }, body: JSON.stringify({ message: "Sync IST JSON", content, sha: state.sha }) });
             if(r1.ok) state.sha = (await r1.json()).content.sha;
 
             const excelContent = getExcelBase64();
-            const r2 = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, { method: 'PUT', headers: { 'Authorization': `token ${GH.token}` }, body: JSON.stringify({ message: "Sync Excel", content: excelContent, sha: state.shaExcel }) });
+            const r2 = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, { method: 'PUT', headers: { 'Authorization': `token ${GH.token}` }, body: JSON.stringify({ message: "Sync IST Excel", content: excelContent, sha: state.shaExcel }) });
             if(r2.ok) state.shaExcel = (await r2.json()).content.sha;
             
-            b.innerHTML = '<i class="fas fa-check"></i> Done';
+            b.innerHTML = '<i class="fas fa-check"></i> IST Synced';
             setTimeout(() => b.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Cloud Sync', 2000);
         } catch(e) { b.innerHTML = 'Error'; }
     }
