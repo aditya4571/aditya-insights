@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADITYA Insights | Ultra</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Added SheetJS for Excel generation -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -235,14 +237,16 @@
         token: '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', 
         owner: 'aditya4571', 
         repo: 'aditya-insights', 
-        path: 'data.json' 
+        path: 'data.json',
+        excelPath: 'dashboard.xlsx' // The path for the Excel file
     };
 
     let state = { 
         habits: ["Study", "Exercise", "Meditation"], 
         habitLogs: {}, 
         todos: [], 
-        sha: "" 
+        sha: "",
+        shaExcel: "" // Store SHA for Excel file updates
     };
 
     // --- Timer State ---
@@ -491,21 +495,63 @@
         });
     }
 
+    // --- Excel Generation Logic ---
+    function generateExcelBase64() {
+        const dates = Object.keys(state.habitLogs).sort().reverse();
+        const aoa = [
+            ["Date", ...state.habits, "Study Minutes"]
+        ];
+
+        dates.forEach(date => {
+            const row = [date];
+            state.habits.forEach(h => {
+                row.push(state.habitLogs[date][h] ? "YES" : "NO");
+            });
+            row.push(state.habitLogs[date].studyMinutes || 0);
+            aoa.push(row);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Habit Logs");
+
+        // Generate binary string and convert to base64
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+        function s2ab(s) {
+            const buf = new ArrayBuffer(s.length);
+            const view = new Uint8Array(buf);
+            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+            return buf;
+        }
+        
+        // Convert binary to base64
+        const binary = String.fromCharCode.apply(null, new Uint8Array(s2ab(wbout)));
+        return window.btoa(binary);
+    }
+
     // --- GitHub Sync ---
     async function loadFromGitHub() {
         try {
-            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`);
-            if(!r.ok) throw new Error("File not found");
-            const d = await r.json();
-            state.sha = d.sha;
-            const content = JSON.parse(atob(d.content));
-            
-            state.habits = content.habits || state.habits;
-            state.habitLogs = content.habitLogs || {};
-            state.todos = content.todos || [];
+            // Fetch JSON state
+            const rJson = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`);
+            if(rJson.ok) {
+                const dJson = await rJson.json();
+                state.sha = dJson.sha;
+                const content = JSON.parse(atob(dJson.content));
+                state.habits = content.habits || state.habits;
+                state.habitLogs = content.habitLogs || {};
+                state.todos = content.todos || [];
+            }
+
+            // Fetch Excel SHA if exists
+            const rExcel = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`);
+            if(rExcel.ok) {
+                const dExcel = await rExcel.json();
+                state.shaExcel = dExcel.sha;
+            }
             
             refreshUI();
-        } catch(e) { console.log("Starting fresh..."); refreshUI(); }
+        } catch(e) { console.log("Init failed, using local state...", e); refreshUI(); }
     }
 
     async function syncData() {
@@ -514,29 +560,44 @@
         btn.innerHTML = '<i class="fas fa-spinner sync-loading"></i> Syncing...';
         
         try {
-            const payload = {
+            // 1. Sync JSON Data
+            const payloadJson = {
                 habits: state.habits,
                 habitLogs: state.habitLogs,
                 todos: state.todos
             };
-            const content = btoa(JSON.stringify(payload));
+            const contentJson = btoa(JSON.stringify(payloadJson));
             
-            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
+            const resJson = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "ADITYA Insights Sync", content, sha: state.sha })
+                body: JSON.stringify({ message: "Sync Data (JSON)", content: contentJson, sha: state.sha })
             });
 
-            if(r.ok) {
-                const j = await r.json();
+            if(resJson.ok) {
+                const j = await resJson.json();
                 state.sha = j.content.sha;
+            }
+
+            // 2. Sync Excel Spreadsheet
+            const excelContentBase64 = generateExcelBase64();
+            const resExcel = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.excelPath}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: "Sync Spreadsheet (Excel)", content: excelContentBase64, sha: state.shaExcel })
+            });
+
+            if(resExcel.ok) {
+                const jExcel = await resExcel.json();
+                state.shaExcel = jExcel.content.sha;
                 btn.innerHTML = '<i class="fas fa-check"></i> Success';
                 setTimeout(() => { btn.innerHTML = oldHtml; }, 2000);
             } else {
-                throw new Error("Sync failed");
+                throw new Error("Excel Sync failed");
             }
         } catch(e) {
             btn.innerHTML = '<i class="fas fa-times"></i> Error';
+            console.error(e);
             setTimeout(() => { btn.innerHTML = oldHtml; }, 3000);
         }
     }
