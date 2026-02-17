@@ -1,0 +1,235 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADITYA Insights | Professional</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #05070a; --card: #111827; --accent: #0ea5e9;
+            --text: #f8fafc; --border: #1e293b; --success: #10b981;
+            --danger: #ef4444; --warning: #f59e0b;
+            --cat-railway: #8b5cf6; --cat-work: #3b82f6; --cat-family: #ec4899;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui; background: var(--bg); color: var(--text); padding: 10px; line-height: 1.5; }
+        .container { max-width: 1400px; margin: auto; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+        }
+        .brand h1 { font-size: 1.5rem; letter-spacing: 1px; color: var(--accent); }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+        @media (max-width: 1000px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+        .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+        h3 { margin-bottom: 15px; font-weight: 600; font-size: 1.1rem; }
+
+        /* Habit Table */
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 450px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .habit-label { text-align: left; color: var(--accent); font-weight: bold; }
+
+        /* Todo Form */
+        .todo-form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        input, select { background: #1f2937; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; flex: 1; }
+        select { flex: 0 0 100px; }
+        
+        .priority-toggle { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--danger); cursor: pointer; }
+
+        /* Todo List */
+        .todo-item { 
+            display: flex; align-items: center; padding: 12px; background: #1e293b; 
+            border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #64748b;
+        }
+        .todo-item.critical { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .todo-item.done { opacity: 0.4; }
+        
+        .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-right: 8px; font-weight: 800; }
+        .tag.Railway { background: var(--cat-railway); }
+        .tag.Work { background: var(--cat-work); }
+        .tag.Family { background: var(--cat-family); }
+
+        .btn { background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-sync { background: var(--success); }
+        .btn-del { margin-left: auto; color: var(--danger); background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand"><h1>ADITYA Insights</h1></div>
+        <button class="btn btn-sync" onclick="syncData()">Cloud Sync</button>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="main-sec">
+            <div class="card">
+                <h3>Habit Tracker</h3>
+                <div class="todo-form">
+                    <input type="text" id="newHabit" placeholder="New Habit...">
+                    <button class="btn" onclick="addHabit()">Add</button>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr id="date-head"><th>Habit</th></tr></thead>
+                        <tbody id="habit-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card"><canvas id="dayChart" height="120"></canvas></div>
+        </div>
+
+        <div class="side-sec">
+            <div class="card">
+                <h3>To-Do List</h3>
+                <div class="todo-form">
+                    <input type="text" id="todoIn" placeholder="Task description...">
+                    <select id="todoCat">
+                        <option value="General">General</option>
+                        <option value="Railway">Railway</option>
+                        <option value="Work">Work</option>
+                        <option value="Family">Family</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                    <label class="priority-toggle"><input type="checkbox" id="isCritical"> CRITICAL PRIORITY</label>
+                    <button class="btn" onclick="addTodo()">Add Task</button>
+                </div>
+                <div id="todo-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // GITHUB CONFIG - ENTER YOUR DATA HERE
+    const GH = { token: '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', owner: 'aditya4571', repo: 'aditya-insights', path: 'data.json' };
+
+    let state = { habits: ["Study", "Exercise", "Meditation"], habitLogs: {}, todos: [], sha: "" };
+
+    function init() {
+        renderDates();
+        loadFromGitHub();
+    }
+
+    function renderDates() {
+        const head = document.getElementById('date-head');
+        const today = new Date();
+        for(let i=4; i>=0; i--) {
+            let d = new Date(); d.setDate(today.getDate() - i);
+            head.innerHTML += `<th>${d.getDate()}/${d.getMonth()+1}</th>`;
+        }
+        renderHabits();
+    }
+
+    function renderHabits() {
+        const body = document.getElementById('habit-body');
+        body.innerHTML = '';
+        state.habits.forEach(h => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td class="habit-label">${h}</td>`;
+            for(let i=4; i>=0; i--) {
+                let d = new Date(); d.setDate(new Date().getDate() - i);
+                let dStr = d.toISOString().split('T')[0];
+                let checked = (state.habitLogs[dStr] && state.habitLogs[dStr][h]) ? 'checked' : '';
+                tr.innerHTML += `<td><input type="checkbox" onchange="toggleH('${dStr}','${h}')" ${checked}></td>`;
+            }
+            body.appendChild(tr);
+        });
+        updateChart();
+    }
+
+    function addHabit() {
+        const val = document.getElementById('newHabit').value;
+        if(val) { state.habits.push(val); renderHabits(); document.getElementById('newHabit').value=''; }
+    }
+
+    function toggleH(d, h) {
+        if(!state.habitLogs[d]) state.habitLogs[d] = {};
+        state.habitLogs[d][h] = !state.habitLogs[d][h];
+        updateChart();
+    }
+
+    function renderTodos() {
+        const list = document.getElementById('todo-list');
+        list.innerHTML = '';
+        // Sort: Critical First, then Incomplete
+        const sorted = [...state.todos].sort((a,b) => b.critical - a.critical || a.done - b.done);
+        
+        sorted.forEach((t, i) => {
+            const div = document.createElement('div');
+            div.className = `todo-item ${t.critical ? 'critical' : ''} ${t.done ? 'done' : ''}`;
+            div.innerHTML = `
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleT(${state.todos.indexOf(t)})">
+                <div style="margin-left:10px">
+                    <span class="tag ${t.cat}">${t.cat}</span>
+                    <p style="display:inline; font-weight:${t.critical?'800':'400'}">${t.text}</p>
+                </div>
+                <button class="btn-del" onclick="delT(${state.todos.indexOf(t)})">×</button>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function addTodo() {
+        const text = document.getElementById('todoIn').value;
+        const cat = document.getElementById('todoCat').value;
+        const critical = document.getElementById('isCritical').checked;
+        if(text) {
+            state.todos.push({ text, cat, critical, done: false });
+            renderTodos();
+            document.getElementById('todoIn').value = '';
+            document.getElementById('isCritical').checked = false;
+        }
+    }
+
+    function toggleT(i) { state.todos[i].done = !state.todos[i].done; renderTodos(); }
+    function delT(i) { state.todos.splice(i, 1); renderTodos(); }
+
+    let chart;
+    function updateChart() {
+        const ctx = document.getElementById('dayChart').getContext('2d');
+        const today = new Date().toISOString().split('T')[0];
+        const data = state.habits.map(h => (state.habitLogs[today] && state.habitLogs[today][h]) ? 100 : 0);
+        if(chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: state.habits, datasets: [{ label: 'Today Progress %', data, backgroundColor: '#0ea5e9' }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+    }
+
+    async function loadFromGitHub() {
+        try {
+            const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`);
+            const d = await r.json();
+            state.sha = d.sha;
+            const content = JSON.parse(atob(d.content));
+            state = { ...state, ...content, sha: d.sha };
+            renderHabits(); renderTodos();
+        } catch(e) { console.log("New setup"); }
+    }
+
+    async function syncData() {
+        const content = btoa(JSON.stringify({ habits: state.habits, habitLogs: state.habitLogs, todos: state.todos }));
+        const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${GH.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: "Update Data", content, sha: state.sha })
+        });
+        if(r.ok) { const j = await r.json(); state.sha = j.content.sha; alert("Data Synced!"); }
+    }
+
+    init();
+</script>
+</body>
+</html>
+
